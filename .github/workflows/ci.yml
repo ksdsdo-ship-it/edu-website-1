@@ -1,14 +1,47 @@
-{
-  "doctype-first": true,
-  "doctype-html5": true,
-  "html-lang-require": true,
-  "meta-charset-require": true,
-  "title-require": true,
-  "tag-pair": true,
-  "tagname-lowercase": true,
-  "attr-lowercase": true,
-  "attr-value-double-quotes": true,
-  "attr-no-duplication": true,
-  "id-unique": true,
-  "alt-require": true
-}
+
+name: CI/CD - HTML Check and GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check HTML
+        run: npx --yes htmlhint "site/**/*.html"
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4
